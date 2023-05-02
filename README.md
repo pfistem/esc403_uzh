@@ -1,6 +1,9 @@
 # Data Science Project
 
 ## Author
+Rahel Eberle
+Roman Stadler
+Carolyne Huang
 Manuel Pfister, University of Zurich
 
 ## Introduction
