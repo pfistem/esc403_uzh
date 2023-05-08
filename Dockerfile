@@ -1,5 +1,5 @@
 # Use the official Python image as the base image
-FROM python:3.10.6-slim
+FROM python:3.10-slim-bullseye
 
 # Create a non-root user
 RUN useradd --create-home appuser
