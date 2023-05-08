@@ -1,25 +1,21 @@
-# Use the official Python image as the base image
-FROM python:3.10-slim-bullseye
+FROM python:3.10.6-slim-buster
 
-# Create a non-root user
-RUN useradd --create-home appuser
-WORKDIR /home/appuser
-USER appuser
+WORKDIR /app
 
-# Set up a virtual environment
-ENV VIRTUAL_ENV=/home/appuser/venv
-RUN python -m venv $VIRTUAL_ENV
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+# Copy requirements.txt into the container
+COPY requirements.txt /app
 
-# Copy the requirements file and install dependencies
-COPY --chown=appuser:appuser requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install any needed packages specified in requirements.txt
+RUN pip install --trusted-host pypi.python.org -r requirements.txt
 
-# Copy the application code
-COPY --chown=appuser:appuser . .
+# Copy the current directory contents into the container
+COPY . /app
 
-# Expose the port the app will run on
+# Make port 8050 available to the world outside this container
 EXPOSE 8050
 
-# Start the application
-CMD ["gunicorn", "app:server", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8050"]
+# Define environment variable
+ENV NAME World
+
+# Run app.py when the container launches
+CMD ["python", "app.py"]
