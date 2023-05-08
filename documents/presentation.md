@@ -1,10 +1,12 @@
 # Skin Cancer Classification with CNN and Dash App Deployment | University of Zurich
 
-A CNN Model for Skin Cancer Classification
-Authors: Roman Stadler, Carolyne Huang, Rahel Eberle and Manuel Pfister
-Date: 2023-05-01
+**A CNN Model for Skin Cancer Classification**
 
-Version: 1.0
+**Authors:** Roman Stadler, Carolyne Huang, Rahel Eberle and Manuel Pfister
+
+**Date:** 2023-05-01
+
+**Version:** 1.0
 
 # Model
 
