@@ -18,5 +18,4 @@ COPY . .
 
 EXPOSE 8050
 
-USER root
-CMD ["gunicorn", "app:server", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8080"]
+CMD ["gunicorn", "app:server", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8050"]
