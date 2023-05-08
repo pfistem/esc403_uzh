@@ -132,7 +132,7 @@ model.summary()
 # 4. Model Training
 # Train the model
 batch_size = 32
-epochs = 1
+epochs = 50
 history = model.fit(datagen.flow(X_train, y_train, batch_size=batch_size),
                     validation_data=(X_test, y_test),
                     steps_per_epoch=len(X_train) // batch_size,
