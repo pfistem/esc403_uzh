@@ -18,4 +18,8 @@ EXPOSE 8050
 ENV NAME World
 
 # Run app.py when the container launches
+<<<<<<< HEAD
 CMD ["python", "app.py"]
+=======
+CMD ["python", "app.py"]
+>>>>>>> d063c104b83cdfc9bbe178c952883d6d5595fb2a
