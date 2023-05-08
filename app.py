@@ -76,20 +76,7 @@ app.layout = dbc.Container([
                 },
             ),
         ], width=8, className='mx-auto mb-5')
-    ]),
-     
-    dbc.Row([
-        dbc.Col([
-            html.Div([
-                html.Button([html.I(className="fas fa-camera me-2"), "Open Camera"], id="open-camera", n_clicks=0, className="btn btn-primary"),
-                html.Div(id="camera-container", children=[
-                    html.Button("Capture", id="camera-capture", n_clicks=0, className="btn btn-primary mt-2")
-                ]),
-                dcc.Store(id="camera-capture-data"),
-            ], className="text-center"),
-        ], width=8, className="mx-auto")
-    ]),
-    
+    ]),  
 
        dbc.Row([
        dbc.Col([
@@ -128,8 +115,6 @@ app.layout = dbc.Container([
             ),
         ])
     ]),
-
-    html.Script(src="camera.js"),
 ])
 
 # Define a function to process the uploaded image and make a prediction
@@ -147,50 +132,7 @@ def process_image(image):
     predicted_label = list(label_mapping.keys())[list(label_mapping.values()).index(predicted_class)]
     return predicted_label, predicted_probability
 
-@app.callback(
-    Output("output-image-upload", "children"),
-    Input("upload-image", "contents"),
-    Input("camera-capture-data", "data"),
-)
-def display_uploaded_image(upload_contents, camera_contents):
-    ctx = dash.callback_context
-    image_data = None
-
-    if not ctx.triggered:
-        raise PreventUpdate
-    else:
-        input_id = ctx.triggered[0]["prop_id"].split(".")[0]
-
-    if input_id == "upload-image":
-        image_data = upload_contents
-    elif input_id == "camera-capture-data":
-        image_data = "data:image/jpeg;base64," + camera_contents
-
-    return display_image(image_data)
-
-
-
-@app.callback(
-    Output("camera-container", "children"),
-    Input("open-camera", "n_clicks"),
-)
-def open_camera(n_clicks):
-    if n_clicks > 0:
-        return html.Div([
-            html.Script("setupCamera()"),
-        ])
-    return None
-
-@app.callback(
-    Output("camera-capture-data", "data"),
-    Input("camera-capture", "n_clicks"),
-    prevent_initial_call=True,
-)
-def store_camera_image(captured_image):
-    if captured_image is not None:
-        return captured_image.split(",")[1]
-    raise PreventUpdate
-
+# Define a function to process the uploaded image and make a prediction
 def display_image(contents):
     image_data = contents
     if image_data is not None:
@@ -203,24 +145,10 @@ def display_image(contents):
 @app.callback(
     Output("output-prediction", "children"),
     Input("upload-image", "contents"),
-    Input("camera-capture-data", "data"),
 )
-def make_prediction(upload_contents, camera_contents):
-    ctx = dash.callback_context
-    image_data = None
-
-    if not ctx.triggered:
-        raise PreventUpdate
-    else:
-        input_id = ctx.triggered[0]["prop_id"].split(".")[0]
-
-    if input_id == "upload-image":
-        image_data = upload_contents
-    elif input_id == "camera-capture-data":
-        image_data = "data:image/jpeg;base64," + camera_contents
-
-    if image_data is not None:
-        content_type, content_string = image_data.split(",")
+def make_prediction(upload_contents):
+    if upload_contents is not None:
+        content_type, content_string = upload_contents.split(",")
         decoded = base64.b64decode(content_string)
         image = Image.open(io.BytesIO(decoded))
         predicted_label, predicted_probability = process_image(image)
@@ -232,9 +160,21 @@ def make_prediction(upload_contents, camera_contents):
         )
     raise PreventUpdate
 
+@app.callback(
+    Output("output-image-upload", "children"),
+    Input("upload-image", "contents")
+)
+def update_output_image_upload(contents):
+    if contents is not None:
+        content_type, content_string = contents.split(',')
+        decoded = base64.b64decode(content_string)
+        image_data = "data:image/jpeg;base64," + content_string
+        return html.Div([
+            html.Img(src=image_data, style={'width': '30%', 'height': 'auto'})
+        ])
+    return None
 
 #Run the app
 server = app.server
 if __name__ == "__main__":
     app.run_server(debug=False)
-    
