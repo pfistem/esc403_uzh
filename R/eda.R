@@ -13,17 +13,18 @@ table(dat$sex)
 table(dat$dx_type)
 
 
+dat <- transform(dat, var = factor(dx, names(sort(-table(dx)))))
+dat <- transform(dat, var = factor(dx_type, names(sort(-table(dx_type)))))
+dat <- transform(dat, var = factor(sex, names(sort(-table(sex)))))
+dat <- transform(dat, var = factor(localization, names(sort(-table(localization)))))
+dat <- transform(dat, var = factor(dataset, names(sort(-table(dataset)))))
+
+
 library(dplyr)
 library(GGally)
 ggpairs(select(dat, dx, dx_type, age, sex))+theme_bw()
 
 
-
-
-# use the ordered levels to relevel the factor variable
-counts <- table(dat$dx)
-ordered_levels <- names(counts)[order(counts, decreasing = TRUE)]
-dat$dx <- factor(dat$dx, levels = ordered_levels)
 
 ggplot(data=dat, aes(x=dx, y=age, color=dx)) +
   geom_boxplot()+
