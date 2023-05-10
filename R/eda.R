@@ -52,3 +52,7 @@ table_one <- CreateTableOne(data = dat, vars=c("age", "sex","localization"),
 table_one <- print(table_one, missing=TRUE)
 
 kableone(table_one, booktabs = T, format = "latex")
+
+
+library(naniar)
+gg_miss_var(dat,  show_pct = TRUE)
