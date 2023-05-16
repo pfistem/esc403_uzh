@@ -8,12 +8,13 @@
 
 # Suppress TensorFlow warnings
 import os
-#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 import json
 import pandas as pd
 import numpy as np
 import cv2
+import glob
 from sklearn.model_selection import train_test_split
 from keras.utils import to_categorical
 from keras.preprocessing.image import ImageDataGenerator
@@ -38,18 +39,26 @@ image_size = 64
 X = []
 y = []
 
-for index, row in metadata.iterrows():
-    image_path = os.path.join(data_dir, 'images', row['image_id'] + '.jpg')
+image_files = glob.glob(os.path.join(data_dir, 'images', '*.jpg'))
+image_ids = [os.path.basename(image_path)[:-4] for image_path in image_files]
+
+for image_id in image_ids:
+    image_path = os.path.join(data_dir, 'images', image_id + '.jpg')
     image = cv2.imread(image_path)
     image = cv2.resize(image, (image_size, image_size))
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     
     X.append(image)
-    y.append(row['dx'])
+    
+    if image_id in metadata['image_id'].values:
+        y.append(metadata.loc[metadata['image_id'] == image_id, 'dx'].values[0])
+    else:
+        y.append('others')
 
 # Convert lists to NumPy arrays
 X = np.array(X, dtype=np.float32)
 y = np.array(y)
+
 
 # Normalize image data
 X /= 255.0
@@ -112,10 +121,20 @@ def create_cnn_model(input_shape, num_classes):
     model.add(MaxPooling2D(pool_size=(2, 2)))
     model.add(Dropout(0.25))
     
+    model.add(Conv2D(256, (3, 3), activation='relu', padding='same'))
+    model.add(BatchNormalization())
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+    
     model.add(Flatten())
     model.add(Dense(512, activation='relu'))
     model.add(BatchNormalization())
     model.add(Dropout(0.5))
+    
+    model.add(Dense(256, activation='relu'))
+    model.add(BatchNormalization())
+    model.add(Dropout(0.5))
+    
     model.add(Dense(num_classes, activation='softmax'))
     
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
@@ -132,7 +151,7 @@ model.summary()
 # 4. Model Training
 # Train the model
 batch_size = 32
-epochs = 50
+epochs = 10
 history = model.fit(datagen.flow(X_train, y_train, batch_size=batch_size),
                     validation_data=(X_test, y_test),
                     steps_per_epoch=len(X_train) // batch_size,
@@ -143,6 +162,7 @@ history = model.fit(datagen.flow(X_train, y_train, batch_size=batch_size),
 # Evaluate the model
 score = model.evaluate(X_test, y_test, verbose=0)
 print('Test loss:', score[0])
+print('Test accuracy:', score[1])
 
 # ======================================================================================================================
 # Save the trained model to a file

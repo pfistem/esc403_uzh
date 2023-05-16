@@ -40,6 +40,7 @@ image_size = 64
 # Create the app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
+
 # Define the app layout
 app.layout = dbc.Container([
     html.Link(href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.0/css/all.min.css", rel="stylesheet"),
@@ -66,7 +67,9 @@ app.layout = dbc.Container([
                     {'lesion-type': 'Dermatofibroma', 'abbreviation': 'df'},
                     {'lesion-type': 'Melanoma', 'abbreviation': 'mel'},
                     {'lesion-type': 'Melanocytic nevi', 'abbreviation': 'nv'},
-                    {'lesion-type': 'Vascular lesions', 'abbreviation': 'vasc'}
+                    {'lesion-type': 'Vascular lesions', 'abbreviation': 'vasc'},
+                    {'lesion-type': 'Unknown', 'abbreviation': 'others'}
+                    
                 ],
                 style_cell={
                     'textAlign': 'left'
@@ -77,22 +80,9 @@ app.layout = dbc.Container([
             ),
         ], width=8, className='mx-auto mb-5')
     ]),
-     
+        
     dbc.Row([
         dbc.Col([
-            html.Div([
-                html.Button([html.I(className="fas fa-camera me-2"), "Open Camera"], id="open-camera", n_clicks=0, className="btn btn-primary"),
-                html.Div(id="camera-container", children=[
-                    html.Button("Capture", id="camera-capture", n_clicks=0, className="btn btn-primary mt-2")
-                ]),
-                dcc.Store(id="camera-capture-data"),
-            ], className="text-center"),
-        ], width=8, className="mx-auto")
-    ]),
-    
-
-       dbc.Row([
-       dbc.Col([
             dcc.Upload(
                 id='upload-image',
                 children=html.Div(['Drag and drop or click to select an image in JPG format.']),
@@ -109,10 +99,10 @@ app.layout = dbc.Container([
                 accept='.jpg'
             ),
             html.Div(id='output-image-upload', className='text-center'),
+            html.Div(id='output-image-preview', className='text-center'),  # Image preview
             html.Div(id='output-prediction', className='text-center mt-5')
-        ], width=8, className='mx-auto')
+    ], width=8, className='mx-auto')
     ]),
-    dcc.Store(id='camera-image-data'),
 
     dbc.Row([
         dbc.Col([
@@ -128,8 +118,6 @@ app.layout = dbc.Container([
             ),
         ])
     ]),
-
-    html.Script(src="camera.js"),
 ])
 
 # Define a function to process the uploaded image and make a prediction
@@ -145,67 +133,24 @@ def process_image(image):
     predicted_class = np.argmax(prediction)
     predicted_probability = np.max(prediction)
     predicted_label = list(label_mapping.keys())[list(label_mapping.values()).index(predicted_class)]
-    return predicted_label, predicted_probability
+    # Return all predictions
+    predicted_probabilities = prediction[0]
+    return predicted_label, predicted_probability, predicted_probabilities
 
 @app.callback(
-    Output("output-image-upload", "children"),
-    Input("upload-image", "contents"),
-    Input("camera-capture-data", "data"),
+    Output('output-image-preview', 'children'),
+    Input('upload-image', 'contents')
 )
-def display_uploaded_image(upload_contents, camera_contents):
-    ctx = dash.callback_context
-    image_data = None
-
-    if not ctx.triggered:
-        raise PreventUpdate
-    else:
-        input_id = ctx.triggered[0]["prop_id"].split(".")[0]
-
-    if input_id == "upload-image":
-        image_data = upload_contents
-    elif input_id == "camera-capture-data":
-        image_data = "data:image/jpeg;base64," + camera_contents
-
-    return display_image(image_data)
-
-
-
-@app.callback(
-    Output("camera-container", "children"),
-    Input("open-camera", "n_clicks"),
-)
-def open_camera(n_clicks):
-    if n_clicks > 0:
-        return html.Div([
-            html.Script("setupCamera()"),
-        ])
-    return None
-
-@app.callback(
-    Output("camera-capture-data", "data"),
-    Input("camera-capture", "n_clicks"),
-    prevent_initial_call=True,
-)
-def store_camera_image(captured_image):
-    if captured_image is not None:
-        return captured_image.split(",")[1]
-    raise PreventUpdate
-
-def display_image(contents):
-    image_data = contents
-    if image_data is not None:
-        content_type, content_string = image_data.split(',')
-        decoded = base64.b64decode(content_string)
-        return html.Div([
-            html.Img(src=image_data, style={'width': '30%', 'height': 'auto'})
-        ])
+def update_image_preview(image_contents):
+    if image_contents is not None:
+        img_html = html.Img(src=image_contents, style={'max-width': '100%', 'max-height': '300px'})
+        return img_html
 
 @app.callback(
     Output("output-prediction", "children"),
     Input("upload-image", "contents"),
-    Input("camera-capture-data", "data"),
 )
-def make_prediction(upload_contents, camera_contents):
+def make_prediction(upload_contents):
     ctx = dash.callback_context
     image_data = None
 
@@ -216,25 +161,24 @@ def make_prediction(upload_contents, camera_contents):
 
     if input_id == "upload-image":
         image_data = upload_contents
-    elif input_id == "camera-capture-data":
-        image_data = "data:image/jpeg;base64," + camera_contents
 
     if image_data is not None:
         content_type, content_string = image_data.split(",")
         decoded = base64.b64decode(content_string)
         image = Image.open(io.BytesIO(decoded))
-        predicted_label, predicted_probability = process_image(image)
+        predicted_label, predicted_probability, predicted_probabilities = process_image(image)
         return html.Div(
             [
                 html.H3("Predicted Class: {}".format(predicted_label)),
                 html.H3("Probability: {:.2f}%".format(predicted_probability * 100)),
+                html.Ul([
+                    html.Li("{}: {:.2f}%".format(label, prob*100), style={'display': 'inline', 'padding-right': '10px'}) for label, prob in zip(label_mapping.keys(), predicted_probabilities)
+                ], style={'list-style-type': 'none'})
             ]
         )
     raise PreventUpdate
 
-
 #Run the app
 server = app.server
 if __name__ == "__main__":
-    app.run_server(debug=False)
-    
+    app.run_server(debug=True)
