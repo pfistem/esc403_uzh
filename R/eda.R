@@ -37,7 +37,8 @@ ggplot(data=dat, aes(x = dx)) +
   geom_histogram(stat = "count", aes(fill=dx))+
   xlab("Type") +
   ylab("Frequency") +
-  theme_bw()
+  theme_bw()+
+  geom_text(aes(label = ..count..), stat = "count", vjust = -0.5, colour = "black")
 
 
 
