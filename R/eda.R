@@ -1,6 +1,7 @@
 library(ggplot2)
+library(dplyr)
 
-dat <- read.csv("~/Git/esc403_skincancerclassifier/www/data/metadata.csv")
+dat <- read.csv("~/esc403_skincancerclassifier/www/data/metadata.csv")
 
 dat$dx <- as.factor(dat$dx)
 dat$dx_type <- as.factor(dat$dx_type)
@@ -12,15 +13,15 @@ str(dat)
 table(dat$sex)
 table(dat$dx_type)
 
+library(forcats)
+dat$dx <- fct_infreq(dat$dx)
+dat$dx_type <- fct_infreq(dat$dx_type)
+dat$sex <- fct_infreq(dat$sex)
+dat$localization <- fct_infreq(dat$localization)
+dat$dataset <- fct_infreq(dat$dataset)
 
-dat <- transform(dat, var = factor(dx, names(sort(-table(dx)))))
-dat <- transform(dat, var = factor(dx_type, names(sort(-table(dx_type)))))
-dat <- transform(dat, var = factor(sex, names(sort(-table(sex)))))
-dat <- transform(dat, var = factor(localization, names(sort(-table(localization)))))
-dat <- transform(dat, var = factor(dataset, names(sort(-table(dataset)))))
 
 
-library(dplyr)
 library(GGally)
 ggpairs(select(dat, dx, dx_type, age, sex))+theme_bw()
 
@@ -28,12 +29,14 @@ ggpairs(select(dat, dx, dx_type, age, sex))+theme_bw()
 
 ggplot(data=dat, aes(x=dx, y=age, color=dx)) +
   geom_boxplot()+
-  xlab("") +
-  ylab("") +
+  xlab("Type") +
+  ylab("Age") +
   theme_bw()
 
 ggplot(data=dat, aes(x = dx)) +
   geom_histogram(stat = "count", aes(fill=dx))+
+  xlab("Type") +
+  ylab("Frequency") +
   theme_bw()
 
 
