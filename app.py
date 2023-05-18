@@ -181,4 +181,4 @@ def make_prediction(upload_contents):
 #Run the app
 server = app.server
 if __name__ == "__main__":
-    app.run_server(debug=False, port=8000)
+    app.run_server(debug=False, port=8000, host='0.0.0.0')
